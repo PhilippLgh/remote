@@ -1,5 +1,7 @@
-import { SyncCom, AsyncCom, asyncMetaToValue, metaToValue, MetaType } from '../Serialization'
+import { asyncMetaToValue, metaToValue, MetaType } from '../Serialization'
 import { RemoteServer } from '../RemoteServer'
+import { ISyncRemoteClient } from '../ISyncRemoteClient'
+import { IAsyncRemoteClient } from '../IAsyncRemoteClient'
 
 const delayed = (res: any, delay: number) => new Promise((resolve, reject) => {
   setTimeout(() => {
@@ -11,7 +13,7 @@ const delayed = (res: any, delay: number) => new Promise((resolve, reject) => {
  * Synchronous RemoteClient implementation that does not use a transport layer
  * but instead calls the correct endpoint on the server directly
  */
-export class SyncRemoteClient implements SyncCom {
+export class SyncRemoteClient implements ISyncRemoteClient {
 
   _contextId: string
 
@@ -61,7 +63,7 @@ export class SyncRemoteClient implements SyncCom {
  * Asynchronous RemoteClient implementation that does not use a transport layer
  * but instead calls the correct endpoint on the server directly
  */
-export class AsyncRemoteClient implements AsyncCom {
+export class AsyncRemoteClient implements IAsyncRemoteClient {
   syncRemoteClient: SyncRemoteClient
   private simulatedDelay = 500
   constructor(private _remoteServer: RemoteServer) {

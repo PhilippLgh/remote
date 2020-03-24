@@ -1,11 +1,4 @@
-export interface SyncCom {
-  getRemoteMember: (metaId: string, memberName: string) => any
-  setRemoteMember: (metaId: string, memberName: string, value: any) => void
-  callRemoteConstructor: (metaId: string, args: any) => any
-  callRemoteFunction: (metaId: string, args: any) => any
-  callRemoteMemberConstructor: (metaId: string, memberName: string, args: any) => any
-  callRemoteMember: (metaId: string, memberName: string, args: any) => any
-}
+import { ISyncRemoteClient } from "../ISyncRemoteClient"
 
 class RemoteObjectCache {
   _objects: any = {}
@@ -26,7 +19,7 @@ class RemoteObjectCache {
 const _remoteObjectCache = new RemoteObjectCache()
 
 // Wrap function in Proxy for accessing remote properties
-const proxyFunctionProperties = (remoteMemberFunction: any, metaId: string, name: string, com: SyncCom) => {
+const proxyFunctionProperties = (remoteMemberFunction: any, metaId: string, name: string, com: ISyncRemoteClient) => {
   let loaded = false;
 
   // Lazily load function properties
@@ -67,7 +60,7 @@ const proxyFunctionProperties = (remoteMemberFunction: any, metaId: string, name
 // Populate object's members from descriptors.
 // The |ref| will be kept referenced by |members|.
 // This matches |getObjectMembers| in rpc-server.
-const setObjectMembers = (ref: any, object: any, metaId: any, members: any, com: SyncCom) => {
+const setObjectMembers = (ref: any, object: any, metaId: any, members: any, com: ISyncRemoteClient) => {
   if (!Array.isArray(members)) return;
 
   for (const member of members) {
@@ -120,7 +113,7 @@ const setObjectMembers = (ref: any, object: any, metaId: any, members: any, com:
 
 // Populate object's prototype from descriptor.
 // This matches |getObjectPrototype| in rpc-server.
-const setObjectPrototype = (ref: any, object: any, metaId: any, descriptor: any, com: SyncCom) => {
+const setObjectPrototype = (ref: any, object: any, metaId: any, descriptor: any, com: ISyncRemoteClient) => {
   if (descriptor === null) return;
   const proto = {};
   setObjectMembers(ref, proto, metaId, descriptor.members, com);
@@ -131,7 +124,7 @@ const setObjectPrototype = (ref: any, object: any, metaId: any, descriptor: any,
 // Convert meta data from browser into real value.
 export const metaToValue = (
   meta: any, /* MetaType */
-  com: SyncCom
+  com: ISyncRemoteClient
 ): any => {
   const types: any = {
     value: () => meta.value,
@@ -185,7 +178,7 @@ export const metaToValue = (
   }
 }
 
-const metaToError = (meta: any /*MetaType*/, com: SyncCom) => {
+const metaToError = (meta: any /*MetaType*/, com: ISyncRemoteClient) => {
   const obj = meta.value;
   for (const { name, value } of meta.members) {
     obj[name] = metaToValue(value, com);

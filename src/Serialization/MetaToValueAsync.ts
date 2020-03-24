@@ -1,11 +1,4 @@
-export interface AsyncCom {
-  getRemoteMember: (metaId: string, memberName: string) => Promise<any>
-  setRemoteMember: (metaId: string, memberName: string, value: any) => Promise<void>
-  callRemoteConstructor: (metaId: string, args: any) => Promise<any>
-  callRemoteFunction: (metaId: string, args: any) => Promise<any>
-  callRemoteMemberConstructor: (metaId: string, memberName: string, args: any) => Promise<any>
-  callRemoteMember: (metaId: string, memberName: string, args: any) => Promise<any>
-}
+import { IAsyncRemoteClient } from '../IAsyncRemoteClient'
 
 class RemoteObjectCache {
   _objects: any = {}
@@ -30,7 +23,7 @@ const throwSyncError = (property: string | number | symbol, value: string = '', 
 }
 
 // Wrap function in Proxy for accessing remote properties
-const proxyFunctionProperties = async (remoteMemberFunction: any, metaId: string, name: string, com: AsyncCom) => {
+const proxyFunctionProperties = async (remoteMemberFunction: any, metaId: string, name: string, com: IAsyncRemoteClient) => {
   let loaded = false;
 
   // Lazily load function properties not possible with async communication
@@ -80,7 +73,7 @@ const proxyFunctionProperties = async (remoteMemberFunction: any, metaId: string
 // Populate object's members from descriptors.
 // The |ref| will be kept referenced by |members|.
 // This matches |getObjectMembers| in rpc-server.
-const setObjectMembers = async (ref: any, object: any, metaId: any, members: any, com: AsyncCom) => {
+const setObjectMembers = async (ref: any, object: any, metaId: any, members: any, com: IAsyncRemoteClient) => {
   if (!Array.isArray(members)) return;
 
   for (const member of members) {
@@ -136,7 +129,7 @@ const setObjectMembers = async (ref: any, object: any, metaId: any, members: any
 
 // Populate object's prototype from descriptor.
 // This matches |getObjectPrototype| in rpc-server.
-const setObjectPrototype = async (ref: any, object: any, metaId: any, descriptor: any, com: AsyncCom) => {
+const setObjectPrototype = async (ref: any, object: any, metaId: any, descriptor: any, com: IAsyncRemoteClient) => {
   if (descriptor === null) return;
   const proto = {};
   await setObjectMembers(ref, proto, metaId, descriptor.members, com);
@@ -147,7 +140,7 @@ const setObjectPrototype = async (ref: any, object: any, metaId: any, descriptor
 // Convert meta data from browser into real value.
 export const metaToValue = async (
   meta: any, /* MetaType */
-  com: AsyncCom
+  com: IAsyncRemoteClient
 ): Promise<any> => {
   const types: any = {
     value: () => meta.value,
@@ -203,7 +196,7 @@ export const metaToValue = async (
   }
 }
 
-const metaToError = async (meta: any /*MetaType*/, com: AsyncCom) => {
+const metaToError = async (meta: any /*MetaType*/, com: IAsyncRemoteClient) => {
   const obj = meta.value;
   for (const { name, value } of meta.members) {
     obj[name] = await metaToValue(value, com);
