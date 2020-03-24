@@ -28,7 +28,7 @@ However, there is only one main instance of an object. All deserialized instance
 The serialization works by creating a meta representation of the original instance.
 
 ## Example:
-```javascript
+```typescript
 class FooFather {
   public age: number = 100
 }
@@ -97,7 +97,7 @@ const meta = valueToMeta(foo)
 The server class allows to expose objects to other processes.
 It also keeps track of new instances that are created in this process and their lifecycle.
 
-```javascript
+```typescript
 export interface IRemoteServer {
   getMember(contextId: string, id: number, name: string) : any;
   setMember(contextId: string, id: number, name: string, args: any[]) : any;
@@ -108,4 +108,19 @@ export interface IRemoteServer {
 }
 ```
 
-# Client
+# Remote Client
+
+The client has to implement an interface that 1:1 corresponds to the server.
+During de-serialization, the serializer ask for information that is only avvailable on the other process,
+which needs to be fetched to construct the proxy instances.
+
+```typescript
+export interface IAsyncRemoteClient {
+  getRemoteMember: (metaId: string, memberName: string) => Promise<any>
+  setRemoteMember: (metaId: string, memberName: string, value: any) => Promise<void>
+  callRemoteMember: (metaId: string, memberName: string, args: any) => Promise<any>
+  callRemoteMemberConstructor: (metaId: string, memberName: string, args: any) => Promise<any>
+  callRemoteFunction: (metaId: string, args: any) => Promise<any>
+  callRemoteConstructor: (metaId: string, args: any) => Promise<any>
+}
+```
