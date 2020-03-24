@@ -9,11 +9,11 @@ All operations, performed on this proxy instance are synchronized over (IPC) mes
 Electron is a multi-process framework with one main process and multiple renderer processes.
 
 Electron's built-in `remote` module allows to share objects between multiple processes similar to Java's RMI:
-> The remote module provides a simple way to do inter-process communication (IPC) between the renderer process (web page) and the main process.
+>The remote module provides a simple way to do inter-process communication (IPC) between the renderer process (web page) and the main process.
 
 It allows to interact with objects that are only available on the main process from renderer processes in a very natural way. All the details about IPC are abstracted and handled by the module.
 
-In this example, the process accessing BrowserWindow is actually creating an object instance on a different process and only has access to a Proxy instance:
+In this example, the process accessing BrowserWindow is actually creating an object instance on a different process and only has access to a proxy instance:
 ```javascript
 const { BrowserWindow } = require('electron').remote
 let win = new BrowserWindow({ width: 800, height: 600 })
@@ -27,7 +27,7 @@ However, there is only one main instance of an object. All deserialized instance
 
 The serialization works by creating a meta representation of the original instance.
 
-Example:
+## Example:
 ```javascript
 class FooFather {
   public age: number = 100
@@ -52,6 +52,8 @@ class Foo extends FooFather {
 const foo = new Foo()
 const meta = valueToMeta(foo)
 ```
+
+### Serialized object (meta representation):
 ```JSON
 {
   "type": "object",
@@ -91,3 +93,19 @@ const meta = valueToMeta(foo)
 }
 ```
 
+# Remote Server
+The server class allows to expose objects to other processes.
+It also keeps track of new instances that are created in this process and their lifecycle.
+
+```javascript
+export interface IRemoteServer {
+  getMember(contextId: string, id: number, name: string) : any;
+  setMember(contextId: string, id: number, name: string, args: any[]) : any;
+  callMember(contextId: string, id: number, method: string, args: any[]) : any;
+  memberConstructor(contextId: string, id: number, method: string, args: any[]) : any;
+  functionCall(contextId: string, id: number, args: any[]) : any;
+  constructorCall(contextId: string, id: number, args: any[]) : any;
+}
+```
+
+# Client
