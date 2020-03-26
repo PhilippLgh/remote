@@ -1,18 +1,18 @@
 export interface IObjectRegistry {
-  add: (contextId: string, value: any) => number
-  get: (id: number) => any
+  add: (value: any, contextId?: string) => string
+  get: (id: string) => any
 }
 
 export class ObjectRegistry implements IObjectRegistry {
   _objects: any = {}
-  _currentId = 17
-  add(contextId: string, obj: any): number {
+  _currentId = 100
+  add(obj: any, contextId?: string): string {
     // generate new id
     const id = ++this._currentId
     this._objects[id] = obj
-    return id
+    return `${id}`
   }
-  get(oid: number) {
+  get(oid: string) {
     return this._objects[oid]
   }
 }
