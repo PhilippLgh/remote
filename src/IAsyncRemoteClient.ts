@@ -5,16 +5,14 @@ export interface IAsyncRemoteClient {
   callRemoteMemberConstructor: (metaId: string, memberName: string, args: any[]) => Promise<any>
   callRemoteFunction: (metaId: string, args: any[]) => Promise<any>
   callRemoteConstructor: (metaId: string, args: any[]) => Promise<any>
-
-  callCallback: (metaId: string, args: any[]) => Promise<boolean>
 }
 
 export class NoComAsync implements IAsyncRemoteClient {
   async getRemoteMember(metaId: string, memberName: string) {
-    throw new Error('getRemoteMember - No remote communication')
+    throw new Error(`getRemoteMember(${metaId},${memberName}) - No remote communication`)
   }
   async setRemoteMember(metaId: string, memberName: string, value: any) {
-    throw new Error('setRemoteMember - No remote communication')
+    throw new Error('setRemoteMember(${metaId},${memberName},${value}) - No remote communication')
   }
   async callRemoteConstructor(metaId: string, args: any[]) {
     throw new Error('callRemoteConstructor - No remote communication')

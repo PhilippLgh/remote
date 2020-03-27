@@ -1,3 +1,5 @@
+import { ISyncCallbackHandler } from "./ICallbackHandler"
+
 export interface ISyncRemoteClient {
   getRemoteMemberSync: (metaId: string, memberName: string) => any
   setRemoteMemberSync: (metaId: string, memberName: string, value: any) => void
@@ -5,13 +7,11 @@ export interface ISyncRemoteClient {
   callRemoteFunctionSync: (metaId: string, args: any[]) => any
   callRemoteMemberConstructorSync: (metaId: string, memberName: string, args: any[]) => any
   callRemoteMemberSync: (metaId: string, memberName: string, args: any[]) => any
-
-  callCallbackSync: (metaId: string, args: any[]) => boolean
 }
 
 export const instanceOfISyncRemoteClient = (obj: any) : obj is ISyncRemoteClient => 'getRemoteMemberSync' in obj
 
-export class NoComSync implements ISyncRemoteClient {
+export class NoComSync implements ISyncRemoteClient, ISyncCallbackHandler {
   getRemoteMemberSync(metaId: string, memberName: string) {
     throw new Error('getRemoteMemberSync - No remote communication')
   }
