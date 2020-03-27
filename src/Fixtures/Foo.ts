@@ -26,10 +26,10 @@ export class Foo extends FooFather {
   getNumber(num: number): number {
     return num
   }
-  getNumberPromise(num: number): Promise<number> {
+  incrementNumberAsync(num: number): Promise<number> {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        resolve(num)
+        resolve(num+1)
       }, 3000)
     })
   }
