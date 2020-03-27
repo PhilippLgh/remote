@@ -1,8 +1,12 @@
 import { assert } from 'chai'
 import { valueToMeta } from './ValueToMeta'
-import { metaToValue, NoCom } from './MetaToValue'
+import { metaToValue, _metaToValueServer, metaToValueSync } from './MetaToValue'
 import { ObjectRegistry } from './ObjectRegistry'
 import { CallbacksRegistry } from '../CallbacksRegistry'
+import { NoComSync } from '../ISyncRemoteClient'
+import { NoComAsync } from '../IAsyncRemoteClient'
+
+const sleep = (t: number) => new Promise((resolve, reject) => setTimeout(resolve, t))
 
 describe('Serialization', () => {
   describe('serializes/de-serializes', () => {
@@ -55,12 +59,12 @@ describe('Serialization', () => {
             addObject: () => '1' // not needed in this case: no-op
           })
 
-          const com = new class com extends NoCom {
-            getRemoteMember(objectId: string, memberName: string) {
+          const com = new class com extends NoComSync {
+            getRemoteMemberSync(objectId: string, memberName: string) {
               return val[memberName]
             }
           }
-          const _valRecovered = metaToValue(meta, com)
+          const _valRecovered = metaToValueSync(meta, com)
           assert.deepEqual(_valRecovered, val)
         })
 
@@ -83,22 +87,22 @@ describe('Serialization', () => {
           /**
            * the objects registry is necessary to associate ids from request with objects
            */
-          const com = new class com extends NoCom {
-            getRemoteMember(objectId: string, memberName: string) {
+          const com = new class com extends NoComSync {
+            // @override
+            getRemoteMemberSync(objectId: string, memberName: string) {
               const obj = objectsRegistry.get(objectId)
               return obj[memberName]
             }
           }
-          const valRecovered1 = metaToValue(meta1, com)
-          const valRecovered2 = metaToValue(meta2, com)
+          const valRecovered1 = metaToValueSync(meta1, com)
+          const valRecovered2 = metaToValueSync(meta2, com)
           assert.deepEqual(valRecovered1, val1)
           assert.deepEqual(valRecovered2, val2)
         })
       })
 
       describe('promises', function() {
-        this.timeout(10*1000)
-        it('serializes promises #1', async () => {
+        it('serializes promises #1 - no arg wrap', async () => {
 
           const val = Promise.resolve('hello')
 
@@ -108,8 +112,9 @@ describe('Serialization', () => {
           })
 
           const callbacks = new CallbacksRegistry()
-          const com = new class com extends NoCom {
-            callRemoteFunction(objectId: string, args: any[]) {
+          const com = new class com extends NoComSync {
+            // @override
+            callRemoteFunctionSync(objectId: string, args: any[]) {
               // if then from a promise is accessed a call is made
               // to the remote function: remoteFunction(resolve, reject)
               // args contains resolve and reject
@@ -134,11 +139,49 @@ describe('Serialization', () => {
               fn(resolve, reject)
             }
           }
-          const valRecovered = metaToValue(meta, com)
-          const result = await valRecovered
-          assert.equal(result, 'hello')
+          const valRecovered = metaToValueSync(meta, com)
+          const result1 = await valRecovered
+          const result2 = await val
+          assert.equal(result1, result2)
         })
-        it.skip('serializes promises #2', async () => {
+        it('serializes promises #2 - arg wrap', async () => {
+
+          const val = Promise.resolve('hello')
+
+          const objects = new ObjectRegistry()
+          const meta = valueToMeta(val, {
+            addObject: (object: any, contextId: string) => objects.add(object)
+          })
+
+          const callbacks = new CallbacksRegistry()
+          const com = new class com extends NoComSync {
+            callRemoteFunctionSync(objectId: string, args: any[]) {
+              // client side:
+              const argsWrapped = args.map(arg => valueToMeta(arg, {
+                isArgument: true,
+                addCallback: (fn: Function) => callbacks.add(fn)
+              }))
+              // <messaging client->server would happen here>
+
+              // server side:
+              const argsUnwrapped = argsWrapped.map(arg => _metaToValueServer(arg, this))
+
+              // functionCall() ...
+              const fn = objects.get(objectId)
+              fn(...argsUnwrapped)
+            }
+            // client side:
+            callCallbackSync(metaId: string, args: any[]) {
+              callbacks.apply(metaId, args)
+              return true
+            }
+          }
+          const valRecovered = metaToValueSync(meta, com)
+          const result1 = await valRecovered
+          const result2 = await val
+          assert.equal(result1, result2)
+        })
+        it.skip('serializes promises #3', async () => {
           const val = new Promise((resolve, reject) => {
             setTimeout(() => {
               resolve(200)
@@ -151,7 +194,7 @@ describe('Serialization', () => {
     })
 
     /**
-     * In most scenarios (no testing, no special environments (electron))
+     * In most scenarios (no test env, no special environments (electron))
      * we won't have synchronous IPC which is why async de-serialization 
      * testing is more important
      */
@@ -159,7 +202,8 @@ describe('Serialization', () => {
 
       describe('promises', function() {
         this.timeout(10*1000)
-        it.only('serializes promises #1', async () => {
+
+        it('serializes promises #1', async () => {
 
           const val = Promise.resolve('hello')
 
@@ -169,8 +213,13 @@ describe('Serialization', () => {
           })
 
           const callbacks = new CallbacksRegistry()
-          const com = new class com extends NoCom {
-            callRemoteFunction(objectId: string, args: any[]) {
+          const com = new class com extends NoComAsync {
+            // the async version cannot lazy load some properties and therefore also calls getRemoteMember
+            async getRemoteMember(objectId: string, memberName: string) {
+              const obj = objects.get(objectId)
+              return obj[memberName]
+            }
+            async callRemoteFunction(objectId: string, args: any[]) {
               // if then from a promise is accessed a call is made
               // to the remote function: remoteFunction(resolve, reject)
               // args contains resolve and reject
@@ -199,15 +248,50 @@ describe('Serialization', () => {
           const result = await valRecovered
           assert.equal(result, 'hello')
         })
-        it('serializes promises #2', async () => {
-          const val = new Promise((resolve, reject) => {
-            setTimeout(() => {
-              resolve(200)
-            }, 200)
+
+        it.only('serializes promises #2 - arg wrap', async () => {
+
+          const val = Promise.resolve('hello')
+
+          const objects = new ObjectRegistry()
+          const meta = valueToMeta(val, {
+            addObject: (object: any, contextId: string) => objects.add(object)
           })
-          const meta = valueToMeta(val)
-          const _valRecovered = metaToValue(meta)
+
+          const callbacks = new CallbacksRegistry()
+          const com = new class com extends NoComAsync {
+            // the async version cannot lazy load some properties and therefore also calls getRemoteMember
+            async getRemoteMember(objectId: string, memberName: string) {
+              const obj = objects.get(objectId)
+              return obj[memberName]
+            }
+            async callRemoteFunction(objectId: string, args: any[]) {
+              // client side:
+              const argsWrapped = args.map(arg => valueToMeta(arg, {
+                isArgument: true,
+                addCallback: (fn: Function) => callbacks.add(fn)
+              }))
+              // <messaging client->server would happen here>
+
+              // server side:
+              const argsUnwrapped = argsWrapped.map(arg => _metaToValueServer(arg, this))
+
+              // functionCall() ...
+              const fn = objects.get(objectId)
+              fn(...argsUnwrapped)
+            }
+            // client side:
+            async callCallback(metaId: string, args: any[]) {
+              callbacks.apply(metaId, args)
+              return true
+            }
+          }
+          const valRecovered = metaToValue(meta, com)
+          const result1 = await valRecovered
+          const result2 = await val
+          assert.equal(result1, result2)
         })
+
       })
     })
 
