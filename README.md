@@ -1,9 +1,22 @@
 # remote
 
-# remote module in Node.js
-This project aims to make the `remote` module that is part of the Electron framework available to regular Node.js applications.
-The `remote` module allows a process to get a handle/reference on an object that lives on a different process.
-All operations, performed on this proxy instance are synchronized over (IPC) messages with the original instance.
+# Node.js
+This project aims to make the `remote` module that is part of the Electron framework available to Node.js and browser applications.
+The `remote` module allows a process to get a handle/reference on an object that lives on a different process: think of `JSON.stringify()`& `JSON.parse()` but for whole objects and without creating copies.
+All operations, performed on a proxy instance are synchronized over (IPC) messages with the original instance.
+This module implements the necessary synchronization protocols, defines IPC messages and has different transport layer implementations based on the use case and environment.
+It helps to achieve more natural and elegant API's and interfaces that abstract from error prone messaging and synchronization like: 
+```javascript
+process.send('xyz', x)
+process.on('message', ...) 
+child.send({})
+emit('action-performed')
+x.on('something-happened', () => { /* sync state */ })
+worker.postMessage(message, [transfer])
+ipcMain.on('asynchronous-do-x',(event, arg) => {})
+ipcRenderer.sendSync('synchronous-message', 'ping') 
+```
+Just like Java RMI it can be considered the object-oriented equivalent to remote procedure calls (RPC) in JavaScript:
 
 ### Remote instances
 ```javascript
@@ -37,7 +50,7 @@ All operations, performed on this proxy instance are synchronized over (IPC) mes
 | remote.expose(foo, 'foo')   |
 +-----------------------------+
 
-                  +--------+  _main-> { type: 'foo', name: 'Shared Foo', counter: 3 }
+                  +--------+  foo -> { type: 'foo', name: 'Shared Foo', counter: 3 }
                   | Master |  
                   +--------+  
                   ^   ^    ^
@@ -70,7 +83,7 @@ foo.counter++
 assert.equal(foo.counter, 1) // can be false
 ```
 
-# remote module in Electron
+# Electron
 Electron is a multi-process framework with one main process and multiple renderer processes.
 
 Electron's built-in `remote` module allows to share objects between multiple processes similar to Java's RMI:
@@ -84,6 +97,10 @@ const { BrowserWindow } = require('electron').remote
 let win = new BrowserWindow({ width: 800, height: 600 })
 win.loadURL('https://github.com')
 ```
+
+## Reactivity
+A common use case in Electron applications is to have a data source on the main process and have a reactive UI framework like React or Vue bind to this source and listen for changes.
+Due to the nature of the remote module, the UI initialization will work but all subsequent changes are "lost".
 
 # Serialization
 The serialization module handles serialization and de-serialization of objects.
