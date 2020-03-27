@@ -1,3 +1,2 @@
-export { valueToMeta, isPromise, isSerializableObject, MetaType, MetaTypeFromClient } from './ValueToMeta'
-export { metaToValue } from './MetaToValue'
-export { metaToValue as asyncMetaToValue } from './MetaToValueAsync'
+export { valueToMeta, isSerializableObject, MetaType } from './ValueToMeta'
+export { metaToValue, metaToValueSync } from './MetaToValue'

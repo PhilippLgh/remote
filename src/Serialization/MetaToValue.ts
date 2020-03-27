@@ -2,6 +2,7 @@ import { RemoteObjectCache } from './RemoteObjectsCache'
 import { ISyncRemoteClient, instanceOfISyncRemoteClient, NoComSync } from '../ISyncRemoteClient'
 import { IAsyncRemoteClient, NoComAsync } from '../IAsyncRemoteClient'
 import { MetaType, instanceOfMeta } from './ValueToMeta'
+import { IAsyncCallbackHandler, instanceOfISyncCallbackHandler, ISyncCallbackHandler } from '../ICallbackHandler'
 
 const throwSyncError = (property: string | number | symbol, value: string = '', receiver: any = undefined) => {
   throw new Error(`Object is not in sync: ${property.toString()} ${value} receiver: ${receiver}`)
@@ -196,7 +197,7 @@ const setObjectPrototype = (ref: any, object: any, metaId: any, descriptor: any,
 }
 
 // TODO remove redundant logic
-export const _metaToValueServer = (meta: MetaType, com: IAsyncRemoteClient | ISyncRemoteClient): any => {
+export const _metaToValueServer = (meta: MetaType, com: IAsyncCallbackHandler | ISyncCallbackHandler): any => {
   if (!instanceOfMeta(meta)) {
     return meta
   }
@@ -244,7 +245,7 @@ export const _metaToValueServer = (meta: MetaType, com: IAsyncRemoteClient | ISy
       }
       */
       let callIntoRenderer
-      if (instanceOfISyncRemoteClient(com)) {
+      if (instanceOfISyncCallbackHandler(com)) {
         callIntoRenderer = function (this: any, ...args: any[]) {
           // console.log('call callback with unwrapped args', args)
           const succeed = com.callCallbackSync(meta.id, args);

@@ -133,6 +133,8 @@ export type MetaTypeFromClient = MetaTypeValue | MetaTypeRemoteObject | MetaType
 | MetaTypeBuffer | MetaTypePromise | MetaTypeObject | MetaTypeFunctionReturnValue | MetaTypeFunction
 */
 
+export const instanceOfMeta = (obj: any) : obj is MetaType => 'type' in obj
+
 // The internal properties of Function.
 export const FUNCTION_PROPERTIES = [
   'length', 'name', 'arguments', 'caller', 'prototype'
@@ -174,7 +176,7 @@ export const getObjectPrototype = function (object: any): ObjProtoDescriptor {
 };
 
 export type AddObjectCallback = (obj: any, contextId: string) => string
-export type AddCallbackCallback = (obj: any) => string
+export type AddCallbackCallback = (callback: Function) => string
 
 export interface ValueToMetaOptions {
   contextId?: string,
