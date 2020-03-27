@@ -1,7 +1,8 @@
-import { asyncMetaToValue, MetaType } from '../../Serialization'
+import { metaToValue, MetaType, valueToMeta } from '../../Serialization'
 import { RemoteServer } from '../../RemoteServer'
 import { IAsyncRemoteClient } from '../../IAsyncRemoteClient'
 import { SyncRemoteClient } from './../Fake/SyncRemoteClient'
+import { CallbacksRegistry } from '../../CallbacksRegistry'
 
 const delayed = (res: any, delay: number) => new Promise((resolve, reject) => {
   setTimeout(() => {
@@ -16,12 +17,13 @@ const delayed = (res: any, delay: number) => new Promise((resolve, reject) => {
 export class AsyncRemoteClient implements IAsyncRemoteClient {
   syncRemoteClient: SyncRemoteClient
   private simulatedDelay = 500
+
   constructor(private _remoteServer: RemoteServer) {
     this.syncRemoteClient = new SyncRemoteClient(_remoteServer)
   }
 
   async metaToValue(meta: MetaType) {
-    return asyncMetaToValue(meta, this)
+    return metaToValue(meta, this)
   }
 
   async getRemote(name: string) {
@@ -30,28 +32,32 @@ export class AsyncRemoteClient implements IAsyncRemoteClient {
 
   /* AsyncCom interface  */
 
-  async getRemoteMember(metaId: string, memberName: string) : Promise<any> {
-    const result = this.syncRemoteClient.getRemoteMember(metaId, memberName)
+  async getRemoteMember(metaId: string, memberName: string): Promise<any> {
+    const result = this.syncRemoteClient.getRemoteMemberSync(metaId, memberName)
     return delayed(result, this.simulatedDelay)
   }
-  async setRemoteMember(metaId: string, memberName: string, value: any) : Promise<void> {
-    const result = this.syncRemoteClient.setRemoteMember(metaId, memberName, value)
+  async setRemoteMember(metaId: string, memberName: string, value: any): Promise<void> {
+    const result = this.syncRemoteClient.setRemoteMemberSync(metaId, memberName, value)
     await delayed(result, this.simulatedDelay)
   }
-  async callRemoteConstructor(metaId: string, args: any) : Promise<any> {
-    const result = this.syncRemoteClient.callRemoteConstructor(metaId, args)
+  async callRemoteConstructor(metaId: string, args: any): Promise<any> {
+    const result = this.syncRemoteClient.callRemoteConstructorSync(metaId, args)
     return delayed(result, this.simulatedDelay)
   }
-  async callRemoteFunction(metaId: string, args: any) : Promise<any> {
-    const result = this.syncRemoteClient.callRemoteFunction(metaId, args)
+  async callRemoteFunction(metaId: string, args: any): Promise<any> {
+    const result = this.syncRemoteClient.callRemoteFunctionSync(metaId, args)
     return delayed(result, this.simulatedDelay)
   }
-  async callRemoteMemberConstructor(metaId: string, memberName: string, args: any) : Promise<any> {
-    const result = this.syncRemoteClient.callRemoteMemberConstructor(metaId, memberName, args)
+  async callRemoteMemberConstructor(metaId: string, memberName: string, args: any): Promise<any> {
+    const result = this.syncRemoteClient.callRemoteMemberConstructorSync(metaId, memberName, args)
     return delayed(result, this.simulatedDelay)
   }
-  async callRemoteMember(metaId: string, memberName: string, args: any) : Promise<any> {
-    const result = this.syncRemoteClient.callRemoteMember(metaId, memberName, args)
+  async callRemoteMember(metaId: string, memberName: string, args: any): Promise<any> {
+    const result = this.syncRemoteClient.callRemoteMemberSync(metaId, memberName, args)
     return delayed(result, this.simulatedDelay)
+  }
+  async callCallback(metaId: string, args: any[]): Promise<boolean> {
+    throw new Error('not implemented')
+    return true
   }
 }
