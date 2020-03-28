@@ -53,8 +53,8 @@ export class RemoteServer implements IRemoteServer {
     // console.log('get member', 'obj:', obj, 'id', id, 'member', name, 'result', obj[name])
     return this.valueToMeta(obj[name], contextId);
   }
-  setMember(contextId: string, id: string, name: string, args: any[]) {
-    // FIXME args = unwrapArgs(event.sender, event.frameId, contextId, args);
+  setMember(contextId: string, id: string, name: string, argWrapped: MetaType) {
+    const args = this.unwrapArgs([argWrapped]);
     const obj = this._objectsRegistry.get(id);
     if (obj == null) {
       throwRPCError(`Cannot set property '${name}' on missing remote object ${id}`);

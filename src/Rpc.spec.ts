@@ -9,7 +9,7 @@ describe('Rpc', () => {
 
     this.timeout(10*1000)
 
-    it('males rpc calls between client and server', async () => {
+    it('makes rpc calls between client and server', async () => {
       const transport = new TestTransport()
       const server = new RpcRemoteServer() 
       server.add(transport.server)     

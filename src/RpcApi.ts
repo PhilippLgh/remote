@@ -55,7 +55,7 @@ export class RpcApi extends EventEmitter {
         }
         return resolve(result)
       } else {
-        console.log('promise not found', this._responsePromises)
+        console.log('promise not found')
       }
     }
     else if (instanceOfRpcRequest(message)) {

@@ -3,7 +3,7 @@ import { MetaType } from './Serialization';
 
 export interface IRemoteServer extends IAsyncCallbackHandler {
   getMember(contextId: string, objectId: string, name: string) : any;
-  setMember(contextId: string, objectId: string, name: string, argsWrapped: MetaType[]) : any;
+  setMember(contextId: string, objectId: string, name: string, argWrapped: MetaType) : any;
   callMember(contextId: string, objectId: string, method: string, argsWrapped: MetaType[]) : any;
   memberConstructor(contextId: string, objectId: string, method: string, argsWrapped: MetaType[]) : any;
   functionCall(contextId: string, objectId: string, argsWrapped: MetaType[]) : any;

@@ -26,9 +26,8 @@ export default class RpcRemoteClient implements IAsyncRemoteClient {
     return metaToValue(meta, this)
   }
 
-  // Convert the arguments object into an array of meta data.
-  wrapArgs(args: any[], visited = new Set()): any {
-    return args.map(arg => valueToMeta(arg, {
+  valueToMeta(val: any, visited = new Set()): MetaType {
+    return valueToMeta(val, {
       visited, 
       isArgument: true,
       addObject: (obj: any) => { 
@@ -36,7 +35,13 @@ export default class RpcRemoteClient implements IAsyncRemoteClient {
         throw new Error('unreachable') 
       },
       addCallback: (callback: Function) => this._callbacksRegistry.add(callback)
-    }));
+    })
+  }
+
+  // Convert the arguments object into an array of meta data.
+  wrapArgs(args: any[]): any {
+    const visited = new Set()
+    return args.map(arg => this.valueToMeta(arg, visited));
   }
   async getRemote(name: string) : Promise<any> {
     const result = await this._rpc.call('getRemote', name) as MetaType
@@ -51,7 +56,7 @@ export default class RpcRemoteClient implements IAsyncRemoteClient {
   }
   async setRemoteMember (metaId: string, memberName: string, value: any) : Promise<void> {
     log('setRemoteMember', metaId, memberName, value)
-    const result = await this._rpc.call('setMember', metaId, memberName, this.wrapArgs(value))
+    const result = await this._rpc.call('setMember', metaId, memberName, this.valueToMeta(value))
   }
   async callRemoteMember (metaId: string, memberName: string, args: any[]) : Promise<any> {
     log('callRemoteMember', metaId, memberName, args)
