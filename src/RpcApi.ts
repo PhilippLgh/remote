@@ -16,7 +16,7 @@ export class RpcApi extends EventEmitter {
     super()
     _transport.on('message', this._onMessage.bind(this))
   }
-  public call(methodName: string, ...args: any[]) {
+  public call(methodName: string, ...args: any[]) : Promise<any> {
     return this.send({
       method: methodName,
       params: args
@@ -36,10 +36,12 @@ export class RpcApi extends EventEmitter {
       ...message,
       id
     }
-    this._transport.send(rpcMessage)
-    return new Promise((resolve, reject) => {
+    const prom = new Promise((resolve, reject) => {
       this._responsePromises[id] = { resolve, reject }
     })
+    // avoid race condition in testing: add promise before send message
+    this._transport.send(rpcMessage)
+    return prom
   }
   private _onMessage(message: any) {
     if (instanceOfRpcResponse(message)) {
@@ -52,6 +54,8 @@ export class RpcApi extends EventEmitter {
           return reject(error.message)
         }
         return resolve(result)
+      } else {
+        console.log('promise not found', this._responsePromises)
       }
     }
     else if (instanceOfRpcRequest(message)) {
