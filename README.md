@@ -245,6 +245,27 @@ We want their meta type to reflect this but without additional context this is n
 If the serializer discovers a callback it will similar to objects ask for an id to reference the callback.
 Callbacks are managed in the `CallbacksRegistry`.
 
+## Async Getters/Setters
+One problem that arises from having async communication ist that intuitive synchronous code becomes asynchronous and therefore error prone.
+Consider the following code:
+```javascript
+foo.age = 80
+```
+which is not setting age on foo but the remote instance and therefore becomes:
+```javascript
+await (foo.age = 80)
+```
+awaiting the operation's promise can be easily forgotten:
+```javascript
+foo.age = 80
+// this creates a race condition between the ipc message asking for age and the setter
+assert(await foo.age, 80) // not guaranteed
+```
+ideally, the code just uses explicit setter methods, good names and is already asynchronous:
+```javascript
+await foo.setAgeAsync(89) // ideally typed : Promise<number>
+```
+
 # IPC
 
 ## Remote Server
