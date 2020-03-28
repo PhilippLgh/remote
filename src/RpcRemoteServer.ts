@@ -6,6 +6,8 @@ import { MetaType } from './Serialization'
 import { ChildProcess } from 'child_process'
 import { IpcTransport, NullTransport } from './Transport'
 
+const instanceOfChildProcess = (obj: any) : obj is ChildProcess => obj.constructor && obj.constructor.name === 'ChildProcess'
+
 export default class RpcRemoteServer {
   private _rpc: RpcApi = new RpcApi(new NullTransport) // will throw when not set
   constructor(
@@ -27,9 +29,9 @@ export default class RpcRemoteServer {
     }
     this._server.setCallback(callbackHandler)
   }
-  add(child: ChildProcess) {
+  add(com: ChildProcess | ITransport) {
     // remote has different transport layer implementations: here we just wrap the ChildProcess IPC connection
-    const transport = new IpcTransport(child)
+    const transport = instanceOfChildProcess(com) ? new IpcTransport(com) : com
     this._initTransport(transport)
   }
   expose(obj: any, name: string) {

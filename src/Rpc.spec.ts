@@ -11,7 +11,8 @@ describe('Rpc', () => {
 
     it('males rpc calls between client and server', async () => {
       const transport = new TestTransport()
-      const server = new RpcRemoteServer(transport.server)      
+      const server = new RpcRemoteServer() 
+      server.add(transport.server)     
       const client = new RpcRemoteClient(transport.client)
       server.expose(new Foo(), 'foo')
 
