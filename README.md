@@ -1,6 +1,6 @@
-# remote
-
 [![CircleCI](https://circleci.com/gh/PhilippLgh/remote.svg?style=svg)](https://circleci.com/gh/PhilippLgh/remote)
+
+# remote
 
 The `remote` module allows a process to get a handle/reference on an object that lives on a different process. It is based on Electron's `remote` module but uses async communication to make it available to Node.js and browser applications.
 All operations, performed on a proxy instance are synchronized over inter-process communication (IPC) with the original instance.
