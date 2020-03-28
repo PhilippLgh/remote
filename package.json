@@ -1,8 +1,8 @@
 {
-  "name": "remote",
+  "name": "@philipplgh/remote",
   "version": "1.0.0",
   "description": "Electron's remote module stand-alone for Node.js multi process applications",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "nyc mocha",
     "watch": "tsc -p ./tsconfig.json -w"
@@ -19,6 +19,7 @@
   "homepage": "https://github.com/PhilippLgh/remote#readme",
   "dependencies": {},
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/chai": "^4.2.11",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.9.3",
@@ -28,5 +29,23 @@
     "source-map-support": "^0.5.16",
     "ts-node": "^8.8.1",
     "typescript": "^3.8.3"
+  },
+  "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "all": true,
+    "check-coverage": true,
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "include": [
+      "src"
+    ],
+    "exclude": [
+      "**/test/",
+      "**/*.spec.ts",
+      "src/bin",
+      "**/*.d.ts"
+    ]
   }
 }
