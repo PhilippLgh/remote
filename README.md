@@ -1,11 +1,13 @@
 # remote
 
-# Node.js
-This project aims to make the `remote` module that is part of the Electron framework available to Node.js and browser applications.
-The `remote` module allows a process to get a handle/reference on an object that lives on a different process: think of `JSON.stringify()`& `JSON.parse()` but for whole objects and without creating copies.
-All operations, performed on a proxy instance are synchronized over (IPC) messages with the original instance.
-This module implements the necessary synchronization protocols, defines IPC messages and has different transport layer implementations based on the use case and environment.
-It helps to achieve more natural and elegant API's and interfaces that abstract from error prone messaging and synchronization like: 
+[![CircleCI](https://circleci.com/gh/PhilippLgh/remote.svg?style=svg)](https://circleci.com/gh/PhilippLgh/remote)
+
+The `remote` module allows a process to get a handle/reference on an object that lives on a different process. It is based on Electron's `remote` module but uses async communication to make it available to Node.js and browser applications.
+All operations, performed on a proxy instance are synchronized over inter-process communication (IPC) with the original instance.
+`remote` implements the necessary synchronization protocols, defines IPC messages and has different transport layer implementations based on the use case and environment.
+
+## Why?
+Syntactic sugar. `remote` helps to achieve more natural and elegant API's and interfaces that abstract from error prone messaging and synchronization like: 
 ```javascript
 process.send('xyz', x)
 process.on('message', ...) 
@@ -16,9 +18,63 @@ worker.postMessage(message, [transfer])
 ipcMain.on('asynchronous-do-x',(event, arg) => {})
 ipcRenderer.sendSync('synchronous-message', 'ping') 
 ```
-Just like Java RMI it can be considered the object-oriented equivalent to remote procedure calls (RPC) in JavaScript:
+Just like Java RMI, it can be considered the object-oriented equivalent to remote procedure calls (RPC) in JavaScript.
 
-### Remote instances
+# Installation
+
+```
+not ready yet
+```
+
+# Usage
+
+## parent.js
+```javascript
+const { Server } = require('@philipplgh/remote')
+
+// we want all child processes to be able to access this functionality
+class Api {
+  number = 10 // some shared state
+  addNumberAsync(num: number): Promise<number> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(this.number+num)
+      }, 3000)
+    })
+  }
+}
+
+// create a new child process e.g. with Node.js fork
+// each process has its own memory and their own V8 instance
+const child = fork('path/to/child_process.js', [], {
+  // with 'ipc' we establish a communication channel between the two processes
+  stdio: ['inherit', 'inherit', 'inherit', 'ipc'] 
+})
+
+// we use a server to make objects available to other processes
+const server = new Server(transport)
+
+// whitelists the child process and allows server to communicate with child
+server.add(child)
+
+// make a new instance of Api available with name 'api'
+server.expose(new Api(), 'api')
+```
+
+## child_process.js
+```javascript
+const { Client } = require('@philipplgh/remote')
+//
+const client = new Client()
+
+const api = await client.getRemote('api')
+
+const number = await api.addNumberAsync(42)
+assert.equal(number, 52) // true
+```
+## Instance types
+
+### Remote instances (constructor calls)
 ```javascript
                   +--------+  w1-> { type: 'foo', name: 'Worker 1', counter: 1 }
                   | Master |  w2-> { type: 'foo', name: 'Worker 2', counter: 1 }
@@ -41,7 +97,7 @@ Just like Java RMI it can be considered the object-oriented equivalent to remote
 +-----------------------------------+
 ```
 
-### Global instances
+### Global instances (accessed by name)
 ```javascript
 // in master:
 +-----------------------------+

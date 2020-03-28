@@ -17,6 +17,7 @@ export class FooFather {
 
 export class Foo extends FooFather {
   public name: string = 'foo'
+  private number = 10 // shared state
   get message() {
     return 'hello'
   }
@@ -30,6 +31,13 @@ export class Foo extends FooFather {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         resolve(num+1)
+      }, 3000)
+    })
+  }
+  addNumberAsync(num: number): Promise<number> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(this.number+num)
       }, 3000)
     })
   }

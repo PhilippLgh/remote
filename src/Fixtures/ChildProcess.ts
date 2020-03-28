@@ -3,7 +3,7 @@ import { Client, IpcTransport } from '../index'
 import { Foo } from './Foo'
 import { assert } from 'chai'
 
-const client = new Client(new IpcTransport())
+const client = new Client()
 
 async function start() {
   // get reference to an existing / exposed object
@@ -22,6 +22,9 @@ async function start() {
   const number = await foo.incrementNumberAsync(42)
   console.log('number is', number)
   assert.equal(number, 43)
+
+  const n = await foo.addNumberAsync(102)
+  assert.equal(n, 112)
 
 }
 

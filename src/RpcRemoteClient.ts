@@ -1,9 +1,9 @@
 import { IAsyncRemoteClient } from './IAsyncRemoteClient'
-import ITransport from './Transport/ITransport'
 import toRpc, { RpcApi } from './RpcApi'
 import { MetaType, metaToValue, valueToMeta } from './Serialization'
 import { RpcRequestMessage } from './RpcMessage'
 import { CallbacksRegistry } from './CallbacksRegistry'
+import { IpcTransport, ITransport } from './Transport'
 
 const log = (message: string, ...args: any[]) => {} // (message: string, ...args: any[]) => console.log(`[RemoteClient] ${message}`, ...args)
 
@@ -11,7 +11,7 @@ export default class RpcRemoteClient implements IAsyncRemoteClient {
   private _rpc: RpcApi
   private _callbacksRegistry: CallbacksRegistry
   constructor(
-    private _transport : ITransport
+    private _transport : ITransport = new IpcTransport()
   ) {
     this._rpc = toRpc(_transport)
     this._callbacksRegistry = new CallbacksRegistry()

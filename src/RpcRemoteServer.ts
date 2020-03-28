@@ -3,14 +3,18 @@ import ITransport from './Transport/ITransport'
 import { RpcRequestMessage } from './RpcMessage'
 import toRpc, { RpcApi } from './RpcApi'
 import { MetaType } from './Serialization'
+import { ChildProcess } from 'child_process'
+import { IpcTransport, NullTransport } from './Transport'
 
 export default class RpcRemoteServer {
-  private _rpc: RpcApi
+  private _rpc: RpcApi = new RpcApi(new NullTransport) // will throw when not set
   constructor(
-    _transport: ITransport,
     private _server: RemoteServer = new RemoteServer(),
   ) {
-    this._rpc = toRpc(_transport)
+
+  }
+  private _initTransport(transport : ITransport) {
+    this._rpc = toRpc(transport)
     this._rpc.on('message', (message: RpcRequestMessage) => {
       const { method, params } = message
       // FIXME hardcoded contextId
@@ -22,6 +26,11 @@ export default class RpcRemoteServer {
       return this._rpc.call('callback', metaId, args)
     }
     this._server.setCallback(callbackHandler)
+  }
+  add(child: ChildProcess) {
+    // remote has different transport layer implementations: here we just wrap the ChildProcess IPC connection
+    const transport = new IpcTransport(child)
+    this._initTransport(transport)
   }
   expose(obj: any, name: string) {
     this._server.exposeObject(obj, name)

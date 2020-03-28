@@ -26,8 +26,8 @@ describe('IpcTransport', function() {
     const child = fork(childProcessScript, [], {
       stdio: ['inherit', 'inherit', 'inherit', 'ipc']
     }) as ChildProcess
-    const transport = new IpcTransport(child)
-    const server = new Server(transport)
+    const server = new Server()
+    server.add(child)
     server.expose(new Foo(), 'foo')
     child.on('message', (msg) => {
       if (instanceOfAssertionError(msg)) {
