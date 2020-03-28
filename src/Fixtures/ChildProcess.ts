@@ -1,43 +1,28 @@
-console.log('child process running')
-import { Client, IpcTransport } from '../index'
-import { Foo } from './Foo'
-import { assert } from 'chai'
-
+// console.log('child process running')
+const { Client, IpcTransport } = require('../index')
+const { assert } = require('chai')
 const client = new Client()
 
-async function start() {
-  // get reference to an existing / exposed object
-  const foo = await client.getRemote('foo') as Foo
+// returns promise
+const evalInContext = (context: any) => (function(){
+  // code can use await inside
+  const code = `(async function start() { ${process.argv.pop()} })()`
+  return eval(code);
+}).call(context)
 
-  // TODO
-  // const { Foo } = require('remote')
-  // const foo = new Foo()
-
-  // console.log('foo', foo)
-  assert.isDefined(foo)
-
-  // failing assert statements create AssertionErrors
-  assert.equal(await foo.name, 'foo') 
-  
-  const number = await foo.incrementNumberAsync(42)
-  console.log('number is', number)
-  assert.equal(number, 43)
-
-  const n = await foo.addNumberAsync(102)
-  assert.equal(n, 112)
-
-}
-
-start()
+evalInContext(this)
   .then(() => {
-    console.log('start is done')
+    // console.log('code execution finished')
     process.exit(0)
   })
-  .catch(error => {
-    console.log('error in start', error)
+  .catch((error: Error) => {
+    // console.log('error in code', error)
     // forward assertion errors
-    process.send && process.send(error)
+    process.send && process.send({
+      'type': 'child_error',
+      error: error.message
+    })
     setTimeout(() => {
       process.exit(1)
-    }, 500)
+    }, 100)
   })
